@@ -56,19 +56,16 @@ Dorfcluster nach der Stauchung. Gestaffelt vorgehen:
 
 ## Durchstichtest: `me_cubetest/`
 
-Fertige RedM-Resource fuer die Schritte 1 und 2. Es fehlen nur die drei
-Binaerdateien in `me_cubetest/stream/`, die lokal entstehen muessen:
+Fertige RedM-Resource. Ordner auf den Server, `ensure me_cubetest`, laeuft
+sofort - Schritt 1 braucht kein eigenes Asset.
 
-    blender --background --python tools/build_testcube.py -- --out out/testpad
-    # in Blender: Sollumz-Shader + YTYP 'me_testpad', ydr/ybn/ytyp exportieren
-    .\tools\convert_to_rdr2.ps1 -InputPath out\export -OutputPath me_cubetest\stream
-    # Ordner auf den Server, dann: ensure me_cubetest
+    /mestock                      ladbares RDR2-Stock-Prop suchen
+    /meradius 1000 2000 20000     Weltradius messen  -> ergibt scale_horizontal
+    /mepad                        eigene Pipeline pruefen (braucht stream/)
 
-Ingame in der F8-Konsole: `/mepad`, `/meradius 1000 2000 20000`, `/mepos`,
-`/meclear`. `/meradius` gibt am Ende den nutzbaren Weltradius aus und rechnet
-daraus direkt den `scale_horizontal` fuer `tools/config.json` aus.
-
-Details in `me_cubetest/README.md`.
+Schritt 0 vorweg: eine fertige Community-Map einwerfen und sehen, ob sie
+laedt. Damit ist geklaert, ob spaetere Fehler am Server oder an der eigenen
+Pipeline liegen. Details und Links in `me_cubetest/README.md`.
 
 ## Terrain-Generator
 

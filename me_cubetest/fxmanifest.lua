@@ -9,10 +9,15 @@ version '1.0.0'
 
 client_script 'client.lua'
 
--- Alles in stream/ wird automatisch gestreamt. Das ytyp zusaetzlich als
--- Archetyp-Request anmelden, sonst kennt die Engine das Modell nicht.
-files {
-    'stream/me_testpad.ytyp',
-}
+-- So wie sie ist, laeuft die Resource sofort: /mestock und /meradius brauchen
+-- kein eigenes Asset, sie nutzen RDR2-Stock-Props.
+--
+-- Erst wenn ydr/ybn/ytyp in stream/ liegen, die beiden Zeilen unten
+-- einkommentieren - vorher zeigt ein data_file auf eine fehlende Datei und
+-- die Resource startet nicht.
 
-data_file 'DLC_ITYP_REQUEST' 'stream/me_testpad.ytyp'
+-- files {
+--     'stream/me_testpad.ytyp',
+-- }
+--
+-- data_file 'DLC_ITYP_REQUEST' 'stream/me_testpad.ytyp'

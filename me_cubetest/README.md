@@ -1,89 +1,111 @@
 # me_cubetest
 
-Durchstichtest fuer die TAOM-Pipeline. Beantwortet zwei Fragen, bevor
-irgendetwas anderes gebaut wird:
+Durchstichtest fuer die TAOM-Pipeline. Drei Tests, von billig nach teuer -
+jeder beantwortet genau eine Frage, damit ein Fehlschlag eindeutig zuzuordnen ist.
 
-1. Laedt ein selbst gebautes Modell, und traegt seine Collision den Spieler?
-2. Wie weit vom Nullpunkt funktioniert das noch?
+| Schritt | Test                    | Braucht          | Beweist                     |
+| ------- | ----------------------- | ---------------- | --------------------------- |
+| 0       | fremde Map einwerfen    | nur Download     | Server + Streaming in Ordnung |
+| 1       | `/meradius`             | **nichts**       | nutzbarer Weltradius, Maszstab |
+| 2       | `/mepad`                | Blender + CitiCon| die eigene Pipeline         |
 
-## Was noch fehlt
+## Sofort loslegen
 
-Der Ordner `stream/` ist leer. Dort hinein muessen drei Dateien, die nur auf
-einem Windows-Rechner mit Blender, Sollumz_RDR und RedM entstehen koennen:
-
-    stream/me_testpad.ydr     Render-Mesh
-    stream/me_testpad.ybn     Collision
-    stream/me_testpad.ytyp    Archetyp, muss "me_testpad" heiszen
-
-Alles andere in dieser Resource ist fertig.
-
-## Weg dorthin
-
-    # 1. Testobjekt bauen (erzeugt out/testpad.blend + Checker-Textur)
-    blender --background --python tools/build_testcube.py -- --out out/testpad
-
-    # 2. out/testpad.blend in Blender oeffnen:
-    #    - Sollumz-Shader auf das Material 'me_testpad_mat' legen
-    #    - YTYP anlegen, Archetyp exakt 'me_testpad', Asset Type Drawable,
-    #      lodDist grosszuegig (z.B. 3000)
-    #    - me_testpad_lod0 als ydr exportieren
-    #    - me_testpad_col   als ybn exportieren
-    #    - ytyp exportieren
-    #    -> alles nach out/export/
-
-    # 3. Ins RDR2-Format konvertieren
-    .\tools\convert_to_rdr2.ps1 -InputPath out\export -OutputPath me_cubetest\stream
-
-    # 4. Ordner me_cubetest auf den Server, dann
-    #    ensure me_cubetest   in der server.cfg
-
-## Testen
+Ordner auf den Server, `ensure me_cubetest` in die server.cfg, fertig. Die
+Resource laeuft ohne jedes eigene Asset - Schritt 1 nutzt RDR2-Stock-Props.
 
 In der F8-Konsole:
 
-    /mepad                          Objekt absetzen und drauf teleportieren
-    /meradius 1000 2000 20000       Weltradius ausmessen
-    /mepos                          aktuelle Koordinaten
-    /meclear                        Testobjekte entfernen
+    /mestock                                   ladbares Stock-Modell suchen
+    /meradius [start] [schritt] [max] [modell] Weltradius messen
+    /metest <name>                             einzelnen Modellnamen pruefen
+    /mepad                                     eigene Pipeline pruefen
+    /mepos    /meclear
 
-Die Ausgabe landet ebenfalls in F8.
+## Schritt 0 - laedt der Server ueberhaupt gestreamte Assets?
 
-### /mepad
+Bevor du irgendetwas selbst baust: eine fertige Community-Map einwerfen und
+sehen, ob sie erscheint.
 
-Meldet, ob das Modell streamt, ob `CreateObject` es platzieren kann und ob du
-darauf stehen bleibst statt durchzufallen. Bleibst du stehen, pruefe vor Ort:
+- https://github.com/joniinnanen/RedM-maps
+- https://github.com/Rexshack-RedM/redm-ymaps
+- https://github.com/blnstudio/redm-free-maps
 
-| Was                  | Soll                                      |
-| -------------------- | ----------------------------------------- |
-| Saeule               | geht bis Augenhoehe (1.83 m)              |
-| Torbogen             | du laeufst durch ohne anzustoszen (2.10 m)|
-| Checker-Feld         | 1 m, jedes 10. Feld orange                |
-| Rampen 15/30/45 Grad | ab wann rutschst du ab?                   |
+Laedt sie -> Server, fxmanifest und Streaming sind in Ordnung, spaetere Fehler
+liegen an deiner Pipeline. Laedt sie nicht -> erst die Serverkonfiguration
+reparieren, sonst suchst du spaeter am falschen Ende.
+
+## Schritt 1 - Weltradius
+
+    /meradius 1000 2000 20000
+
+Setzt ein Prop in wachsender Entfernung ab, teleportiert dich hin und meldet
+pro Distanz:
+
+- **Drift Objekt / Spieler** - Abweichung zwischen gesetzter und
+  zurueckgelesener Koordinate. Reine Float-Praezision, waechst linear mit der
+  Entfernung vom Nullpunkt.
+- **existiert / sichtbar** - ob die Engine das Objekt dort noch fuehrt.
+- **Absacken** - nur mit eigenem Testpad aussagekraeftig.
+
+Findet kein Stock-Modell: `/mestock` zeigt, welche Kandidaten scheitern, und
+mit `/metest <name>` pruefst du eigene. Namenslisten auf
+[redlookup.com/objects](https://redlookup.com/objects/) und in der
+[RDR2Mods-Objektliste](https://www.rdr2mods.com/wiki/pages/list-of-object-models-in-rdr2-r16/).
+Einen gefundenen Namen kannst du direkt uebergeben:
+
+    /meradius 1000 2000 20000 p_door01x
+
+Am Ende steht der nutzbare Radius und der daraus folgende `scale_horizontal`
+fuer `tools/config.json`. Diese Zahl entscheidet ueber den Maszstab der ganzen
+Karte, deshalb steht der Test vor jedem Terrain-Lauf.
+
+Ein kleines Stock-Prop misst Praezision und Persistenz, aber nicht, ob dich
+etwas traegt. Fuer die Collision-Frage braucht es Schritt 2.
+
+## Schritt 2 - die eigene Pipeline
+
+Ein heruntergeladenes Modell beweist, dass *fremde* Toolchains funktionieren.
+Ueber deine sagt es nichts - und deine muss am Ende 1024 Terrain-Kacheln
+durchschleusen. Deshalb einmal selbst durch die ganze Kette:
+
+    # Testobjekt bauen (erzeugt out/testpad.blend + Checker-Textur)
+    blender --background --python tools/build_testcube.py -- --out out/testpad
+
+    # in Blender oeffnen:
+    #  - Sollumz-Shader auf das Material 'me_testpad_mat'
+    #  - YTYP anlegen, Archetyp exakt 'me_testpad', Asset Type Drawable,
+    #    lodDist grosszuegig (z.B. 3000)
+    #  - me_testpad_lod0 -> ydr,  me_testpad_col -> ybn,  ytyp exportieren
+    #  -> alles nach out/export/
+
+    .\tools\convert_to_rdr2.ps1 -InputPath out\export -OutputPath me_cubetest\stream
+
+Danach in `fxmanifest.lua` die beiden auskommentierten Zeilen einkommentieren
+(`files` und `data_file`), Resource neu starten, `/mepad`.
+
+Stehst du drauf, pruefe vor Ort:
+
+| Was                  | Soll                                       |
+| -------------------- | ------------------------------------------ |
+| Saeule               | geht bis Augenhoehe (1.83 m)               |
+| Torbogen             | du laeufst durch ohne anzustoszen (2.10 m) |
+| Checker-Feld         | 1 m, jedes 10. Feld orange                 |
+| Rampen 15/30/45 Grad | ab wann rutschst du ab?                    |
 
 Das ist zugleich die Maszstabspruefung fuer alle spaeteren Bannerlord-Scenes:
 die werden mit exakt demselben Faktor 1.0 importiert. Stimmt die Tuerhoehe
-hier, stimmt sie dort.
-
-### /meradius
-
-Setzt das Objekt in wachsender Entfernung ab und teleportiert dich jeweils
-darauf. Pro Distanz wird gemeldet:
-
-- **Drift** - Abweichung zwischen gesetzter und zurueckgelesener Koordinate.
-  Reine Float-Genauigkeit; waechst mit der Entfernung.
-- **Absacken** - faellst du durch, fehlt die Collision.
-- **in der Luft / Ground-Z** - ob die Engine dort noch Boden findet.
-
-Am Ende steht der nutzbare Radius und der daraus folgende `scale_horizontal`
-fuer `tools/config.json`. Genau diese Zahl entscheidet ueber den Maszstab der
-ganzen Karte, deshalb steht der Test vor jedem Terrain-Lauf.
+hier, stimmt sie dort. Die Rampen sagen dir, ab welchem Winkel die Collision
+den Spieler abrutschen laesst - die Zahl brauchst du spaeter fuer die
+Uebergangsringe der Siedlungs-Pads.
 
 ## Wenn /mepad nichts laedt
 
-Das Modell wird nicht gestreamt. In dieser Reihenfolge pruefen:
+In dieser Reihenfolge pruefen:
 
-1. Liegen alle drei Dateien in `stream/`?
-2. Heiszt der Archetyp im ytyp exakt `me_testpad` (nicht `me_testpad_lod0`)?
-3. `restart me_cubetest` auf dem Server, F8-Konsole auf Streaming-Fehler ansehen.
-4. Hat CitiCon wirklich konvertiert? Eine unkonvertierte GTA-V-ydr laedt in
-   RDR2 nicht, sieht aber gleich aus.
+1. Sind die beiden Zeilen in `fxmanifest.lua` einkommentiert?
+2. Liegen alle drei Dateien in `stream/`?
+3. Heiszt der Archetyp im ytyp exakt `me_testpad` (nicht `me_testpad_lod0`)?
+4. Hat CitiCon wirklich konvertiert? Eine unkonvertierte GTA-V-ydr sieht
+   identisch aus, laedt in RDR2 aber nicht.
+5. Laedt Schritt 0 noch? Wenn nicht, liegt es am Server, nicht an dir.
