@@ -54,6 +54,22 @@ Dorfcluster nach der Stauchung. Gestaffelt vorgehen:
 6. **Eine komplette Siedlung** inkl. Pad, LOD und Collision.
 7. Erst dann der volle Lauf.
 
+## Durchstichtest: `me_cubetest/`
+
+Fertige RedM-Resource fuer die Schritte 1 und 2. Es fehlen nur die drei
+Binaerdateien in `me_cubetest/stream/`, die lokal entstehen muessen:
+
+    blender --background --python tools/build_testcube.py -- --out out/testpad
+    # in Blender: Sollumz-Shader + YTYP 'me_testpad', ydr/ybn/ytyp exportieren
+    .\tools\convert_to_rdr2.ps1 -InputPath out\export -OutputPath me_cubetest\stream
+    # Ordner auf den Server, dann: ensure me_cubetest
+
+Ingame in der F8-Konsole: `/mepad`, `/meradius 1000 2000 20000`, `/mepos`,
+`/meclear`. `/meradius` gibt am Ende den nutzbaren Weltradius aus und rechnet
+daraus direkt den `scale_horizontal` fuer `tools/config.json` aus.
+
+Details in `me_cubetest/README.md`.
+
 ## Terrain-Generator
 
     blender --background --python tools/build_terrain.py -- \
