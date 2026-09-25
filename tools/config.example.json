@@ -1,0 +1,38 @@
+{
+  "_kommentar": "Zwei Maszstaebe: Terrain wird gestaucht, Gebaeude nie. Siehe README.",
+
+  "heightmap": "input/taom_heightmap.r16",
+  "heightmap_size_px": [2048, 2048],
+  "world_size_m": [1500000, 1500000],
+  "height_range_m": [0, 3000],
+
+  "scale_horizontal": 0.01,
+  "scale_vertical": 0.0333,
+
+  "tile_size_m": 512,
+  "origin": [0, 0, 1500],
+  "prefix": "me",
+
+  "lod_strides": [1, 4, 16],
+  "collision_stride": 1,
+  "skirt_depth_m": 8.0,
+
+  "biome_mask": "input/taom_biomes.png",
+  "biomes": [
+    { "name": "me_grass",     "rgb": [0.35, 0.50, 0.22] },
+    { "name": "me_forest",    "rgb": [0.16, 0.30, 0.14] },
+    { "name": "me_rock",      "rgb": [0.48, 0.45, 0.42] },
+    { "name": "me_snow",      "rgb": [0.92, 0.93, 0.95] },
+    { "name": "me_sand",      "rgb": [0.76, 0.68, 0.45] },
+    { "name": "me_wasteland", "rgb": [0.30, 0.26, 0.24] }
+  ],
+
+  "_pads": "x_m/y_m in Originalmetern der TAOM-Karte, radius_m in SPIELmetern",
+  "pads": [
+    { "name": "edoras",     "x_m": 742000, "y_m": 880000, "radius_m": 300, "falloff_m": 400 },
+    { "name": "bruchtal",   "x_m": 508000, "y_m": 431000, "radius_m": 250, "falloff_m": 350 },
+    { "name": "hobbingen",  "x_m": 196000, "y_m": 372000, "radius_m": 200, "falloff_m": 300 }
+  ],
+
+  "output_dir": "out/tiles"
+}
