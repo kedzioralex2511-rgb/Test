@@ -63,6 +63,10 @@ Dorfcluster nach der Stauchung. Gestaffelt vorgehen:
     blender --background --python tools/build_terrain.py -- \
         --config tools/config.json               # alles
 
+Die Kachelgroesse wird auf ein Vielfaches des groebsten LOD-Strides eingerastet
+und die Heightmap am Rand repliziert, damit jede Kachel - auch die am Rand -
+alle LOD-Stufen bekommt. Der `--dry-run` meldet die tatsaechliche Kachelgroesse.
+
 Pro Kachel entsteht eine `.blend` mit `_lod0/_lod1/_lod2` (-> ydr) und `_col`
 (-> ybn). Randvertices werden aus globalen Gitterindizes berechnet, damit
 Nachbarkacheln bitgenau zusammenpassen; ein Skirt nach unten deckt Risse

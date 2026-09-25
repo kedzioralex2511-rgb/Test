@@ -233,7 +233,9 @@ def sample_biomes(mask, cfg, i0, j0, n, stride):
 
 # --------------------------------------------------------------------------
 def main():
-    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    # In Blender kommen eigene Argumente nach "--"; ausserhalb (fuer --dry-run)
+    # steht das Skript selbst an Position 0.
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--only", help="nur diese Kachel bauen, z.B. 3_7 (fuer den ersten Test)")
@@ -257,26 +259,40 @@ def main():
     world_x = cfg["world_size_m"][0] * sh
     world_y = cfg["world_size_m"][1] * sh
     step_m = world_x / (w_px - 1)
-    tile = cfg["tile_size_m"]
-    n = int(round(tile / step_m))
+    strides = cfg.get("lod_strides", [1, 4, 16])
+    col_stride = cfg.get("collision_stride", 1)
+
+    # Quads pro Kachel muss durch jeden LOD-Stride teilbar sein, sonst laesst
+    # sich die Kachel nicht ausduennen. Auf das naechstkleinere Vielfache des
+    # groebsten Strides einrasten.
+    step_quads = max(max(strides), col_stride)
+    n = int(round(cfg["tile_size_m"] / step_m))
+    n = max(step_quads, (n // step_quads) * step_quads)
     if n < 4:
         raise SystemExit(f"tile_size_m zu klein: nur {n} Quads pro Kachel.")
 
+    # Heightmap am Rand replizieren, bis sie glatt in Kacheln aufgeht - sonst
+    # verlieren die Randkacheln ihre LOD-Stufen.
     tiles_x = math.ceil((w_px - 1) / n)
     tiles_y = math.ceil((h_px - 1) / n)
+    pad_x = tiles_x * n + 1 - w_px
+    pad_y = tiles_y * n + 1 - h_px
+    if pad_x or pad_y:
+        heights_game = np.pad(heights_game, ((0, pad_y), (0, pad_x)), mode="edge")
+        print(f"Heightmap um {pad_x} x {pad_y} Samples randrepliziert")
 
     print(f"Weltgroesse im Spiel : {world_x/1000:.2f} x {world_y/1000:.2f} km")
     print(f"Sampleabstand        : {step_m:.2f} m")
+    print(f"Kachelgroesse        : {n*step_m:.1f} m ({n} Quads, angefragt {cfg['tile_size_m']} m)")
     print(f"Kacheln              : {tiles_x} x {tiles_y} = {tiles_x*tiles_y}")
     print(f"Quads je Kachel LOD0 : {n*n}")
+    print(f"Vertices gesamt LOD0 : {tiles_x*tiles_y*(n+1)**2/1e6:.1f} Mio")
     print(f"Hoehenbereich        : {heights_game.min():.1f} .. {heights_game.max():.1f} m")
 
     if args.dry_run:
         return
 
     origin = cfg.get("origin", [0, 0, 0])
-    strides = cfg.get("lod_strides", [1, 4, 16])
-    col_stride = cfg.get("collision_stride", 1)
     skirt = cfg.get("skirt_depth_m", 8.0)
     out_dir = cfg["output_dir"]
     os.makedirs(out_dir, exist_ok=True)
@@ -295,9 +311,7 @@ def main():
             mats = biome_materials(cfg)
 
             i0, j0 = ti * n, tj * n
-            n_eff = min(n, w_px - 1 - i0, h_px - 1 - j0)
-            if n_eff < 1:
-                continue
+            n_eff = n  # nach dem Randpadding sind alle Kacheln gleich gross
 
             for lod, stride in enumerate(strides):
                 if n_eff % stride:
